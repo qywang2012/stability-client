@@ -5,6 +5,9 @@ import { Command, Option, InvalidArgumentError } from 'commander'
 import { sync as readPackageUpSync } from 'read-pkg-up'
 import { generate } from './index'
 import { diffusionMap, range } from './utils'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as mime from 'mime-types'
 
 const res = readPackageUpSync({
   cwd: __dirname,
@@ -76,6 +79,8 @@ cli
   )
   .option('-d, --debug', 'Additional logging')
 
+  .option('--image-prompt <imagePrompt>', 'image prompt')
+
   .action((prompt, opts) => {
     if (!opts.apiKey) {
       console.error(
@@ -97,6 +102,15 @@ cli
       apiKey: opts.apiKey,
       debug: Boolean(opts.debug),
       noStore: Boolean(opts.noStore),
+      imagePrompt: opts.imagePrompt ?? null,
+    }
+    if (opts.imagePrompt) {
+      const filePath = path.join(path.resolve('./'), opts.imagePrompt)
+      stabilityOpts.imagePrompt = {
+        mime: mime.lookup(filePath),
+        content: fs.readFileSync(filePath),
+      }
+      // console.log('imagePrompt:', stabilityOpts.imagePrompt)
     }
 
     const api = generate(stabilityOpts)
